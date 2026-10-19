@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>อัพโหลดและแชร์เพลง</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #121212;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    .card {
+      background: #1e1e1e;
+      padding: 30px;
+      border-radius: 16px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      width: 100%;
+      max-width: 400px;
+    }
+    h2 { margin-top: 0; font-size: 1.4rem; color: #1db954; }
+    input[type="file"] {
+      display: none;
+    }
+    .file-upload-btn {
+      display: block;
+      background-color: #333;
+      color: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 15px 0;
+      border: 2px dashed #555;
+      transition: 0.2s;
+    }
+    .file-upload-btn:hover {
+      border-color: #1db954;
+      background-color: #282828;
+    }
+    button {
+      background-color: #1db954;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 30px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+      transition: 0.2s;
+    }
+    button:hover { background-color: #1ed760; }
+    #shareArea {
+      margin-top: 20px;
+      display: none;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      background: #2a2a2a;
+      color: white;
+      text-align: center;
+      margin-top: 10px;
+      box-sizing: border-box;
+    }
+    audio { width: 100%; margin-top: 15px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div id="uploadSection">
+      <h2>🎵 อัพโหลดเพลงเพื่อแชร์</h2>
+      <label class="file-upload-btn">
+        📂 เลือกไฟล์เพลง (mp3, m4a)
+        <input type="file" id="audioFile" accept="audio/*" onchange="handleFileSelect(event)">
+      </label>
+      <p id="fileName" style="font-size: 0.9rem; color: #aaa;"></p>
+      <button id="createBtn" class="hidden" onclick="generateLink()">🔗 สร้างลิงก์แชร์</button>
+    </div>
+
+    <div id="playerSection" class="hidden">
+      <h2>🎧 เล่นเพลง</h2>
+      <audio id="audioPlayer" controls></audio>
+      <div id="shareArea">
+        <p style="font-size: 0.9rem; color: #aaa; margin-bottom: 5px;">คัดลอกลิงก์นี้ให้เพื่อน:</p>
+        <input type="text" id="shareLink" readonly onclick="this.select()">
+        <button style="background-color: #333; margin-top: 10px;" onclick="copyLink()">📋 คัดลอกลิงก์</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let base64Audio = "";
+
+    // ตรวจสอบตอนเปิดเว็บว่ามีเพลงแนบมากับลิงก์ไหม (กรณีคนอื่นกดเข้ามา)
+    window.onload = function() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const songData = urlParams.get('song');
+      if (songData) {
+        document.getElementById('uploadSection').style.display = 'none';
+        document.getElementById('playerSection').style.display = 'block';
+        const player = document.getElementById('audioPlayer');
+        player.src = songData;
+        player.play().catch(() => {
+          // เผื่อ Browser บล็อก Autoplay ให้กดเล่นเองได้
+        });
+      }
+    };
+
+    function handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (file) {
+        document.getElementById('fileName').innerText = "เลือกไฟล์: " + file.name;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          base64Audio = e.target.result;
+          document.getElementById('createBtn').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function generateLink() {
+      if (!base64Audio) return;
+      
+      // สร้าง URL ปัจจุบันบวกกับข้อมูลเพลง
+      const baseUrl = window.location.href.split('?')[0];
+      const fullLink = baseUrl + "?song=" + encodeURIComponent(base64Audio);
+
+      document.getElementById('uploadSection').style.display = 'none';
+      document.getElementById('playerSection').style.display = 'block';
+      document.getElementById('shareArea').style.display = 'block';
+      
+      const player = document.getElementById('audioPlayer');
+      player.src = base64Audio;
+
+      document.getElementById('shareLink').value = fullLink;
+    }
+
+    function copyLink() {
+      const linkInput = document.getElementById('shareLink');
+      linkInput.select();
+      linkInput.setSelectionRange(0, 99999);
+      navigator.clipboard.writeText(linkInput.value);
+      alert("คัดลอกลิงก์เรียบร้อย!");
+    }
+  </script>
+
+</body>
+</html>
